@@ -1,0 +1,213 @@
+<data enableBatchRequests="true" enableBoxcarring="true" name="hotel" serviceNamespace="integrationproject" transports="http https local jms">
+    <config enableOData="false" id="hoteldruid">
+        <property name="driverClassName">com.mysql.jdbc.Driver</property>
+        <property name="url">jdbc:mysql://10.3.51.8:3306/hoteldruid</property>
+        <property name="username">hoteladmin</property>
+        <property name="password">pass</property>
+    </config>
+    <config enableOData="false" id="suiteCRM">
+        <property name="driverClassName">com.mysql.jdbc.Driver</property>
+        <property name="url">jdbc:mysql://10.3.51.8:3306/suitecrm</property>
+        <property name="username">crmadmin</property>
+        <property name="password">pass</property>
+        <property name="dataSourceProps"/>
+        <property name="dynamicUserAuthMapping">
+            <configuration/>
+        </property>
+    </config>
+    <query id="getProductCategory" useConfig="hoteldruid">
+        <sql>SELECT idntariffe, nomecostoagg, valore_ca FROM ntariffe2017 WHERE categoria_ca=:category ;</sql>
+        <result outputType="json">{&#xd; "products": {&#xd; "product": [&#xd; {&#xd; "id": "$idntariffe",&#xd; "name": "$nomecostoagg",&#xd; "price": "$valore_ca"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+        <param name="category" sqlType="STRING"/>
+    </query>
+    <query id="processOrder" useConfig="hoteldruid">
+        <sql>UPDATE costiprenota2017 SET processed=TRUE WHERE idcostiprenota=:orderId ;</sql>
+        <param name="orderId" sqlType="INTEGER"/>
+    </query>
+    <query id="getOrders" useConfig="hoteldruid">
+        <sql>SELECT costiprenota2017.idcostiprenota, prenota2017.idappartamenti, costiprenota2017.nome, costiprenota2017.datainserimento, utenti.nome_utente&#xd;FROM costiprenota2017 INNER JOIN prenota2017 ON costiprenota2017.idprenota=prenota2017.idprenota&#xd;  INNER JOIN ntariffe2017 ON ntariffe2017.nomecostoagg = costiprenota2017.nome&#xd;  INNER JOIN utenti ON costiprenota2017.utente_inserimento=utenti.idutenti&#xd;WHERE costiprenota2017.processed=false AND ntariffe2017.categoria_ca=:category ORDER BY prenota2017.idappartamenti ;</sql>
+        <result outputType="json">{&#xd; "orders": {&#xd; "order": [&#xd; {&#xd; "id": "$idcostiprenota",&#xd; "roomNumber": "$idappartamenti",&#xd; "name": "$nome",&#xd; "createdOn": "$datainserimento",&#xd; "createdBy": "$nome_utente"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+        <param name="category" sqlType="STRING"/>
+    </query>
+    <query id="getCategories" useConfig="hoteldruid">
+        <sql>SELECT DISTINCT(categoria_ca) FROM ntariffe2017 WHERE categoria_ca IS NOT NULL ;</sql>
+        <result outputType="json">{&#xd; "categories": {&#xd; "category": [&#xd; {&#xd; "name": "$categoria_ca"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+    </query>
+    <query id="getAllOrders" useConfig="hoteldruid">
+        <sql>SELECT costiprenota2017.idcostiprenota, prenota2017.idappartamenti, costiprenota2017.nome, costiprenota2017.datainserimento, utenti.nome_utente, ntariffe2017.categoria_ca&#xd;FROM costiprenota2017 INNER JOIN prenota2017 ON costiprenota2017.idprenota=prenota2017.idprenota&#xd;  INNER JOIN ntariffe2017 ON ntariffe2017.nomecostoagg = costiprenota2017.nome&#xd;  INNER JOIN utenti ON costiprenota2017.utente_inserimento=utenti.idutenti&#xd;WHERE costiprenota2017.processed=false AND ntariffe2017.categoria_ca IS NOT NULL ORDER BY prenota2017.idappartamenti ;</sql>
+        <result outputType="json">{&#xd; "orders": {&#xd; "order": [&#xd; {&#xd; "id": "$idcostiprenota",&#xd; "roomNumber": "$idappartamenti",&#xd; "name": "$nome",&#xd; "createdOn": "$datainserimento",&#xd; "createdBy": "$nome_utente",&#xd; "category": "$categoria_ca"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+    </query>
+    <query id="insertContact" useConfig="suiteCRM">
+        <sql>INSERT INTO contacts(id, first_name, last_name, birthdate, primary_address_country, primary_address_state, primary_address_city, primary_address_postalcode, primary_address_street, phone_mobile, phone_work, phone_home, phone_fax, date_entered, date_modified, modified_user_id, created_by, portal_user_type) VALUES (:id,:firstName,:lastName,:birthDate,:country,:state,:city,:postalCode,:street,:phoneMobile,:phoneWork,:phoneHome,:phoneFax,:createdOn,:createdOn,'1','1','Single') ;</sql>
+        <param defaultValue="#{NULL}" name="id" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="firstName" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="lastName" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="birthDate" sqlType="DATE"/>
+        <param defaultValue="#{NULL}" name="country" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="state" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="city" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="postalCode" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="street" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="phoneMobile" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="phoneWork" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="phoneHome" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="phoneFax" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="createdOn" sqlType="STRING"/>
+    </query>
+    <query id="insertEmail" useConfig="suiteCRM">
+        <sql>INSERT INTO email_addresses (id, email_address, email_address_caps, date_created, date_modified, opt_out, invalid_email) VALUES (:id,:email,:emailCaps,:createdOn,:createdOn, FALSE, FALSE);</sql>
+        <param name="id" sqlType="STRING"/>
+        <param name="email" sqlType="STRING"/>
+        <param name="emailCaps" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="createdOn" sqlType="STRING"/>
+    </query>
+    <query id="insertEmailRelation" useConfig="suiteCRM">
+        <sql>INSERT INTO email_addr_bean_rel (id, email_address_id, bean_id, bean_module, primary_address, reply_to_address, date_created, date_modified) VALUES (:id,:emailId,:clientId,'Contacts', TRUE, FALSE,:createdOn,:createdOn);</sql>
+        <param name="id" sqlType="STRING"/>
+        <param name="emailId" sqlType="STRING"/>
+        <param name="clientId" sqlType="STRING"/>
+        <param defaultValue="#{NULL}" name="createdOn" sqlType="STRING"/>
+    </query>
+    <query id="getRoomClientStats" useConfig="hoteldruid">
+        <sql>SELECT prenota2017.idappartamenti, CONCAT(clienti.nome, ' ', clienti.cognome) AS name, (prenota2017.iddatafine - prenota2017.iddatainizio) AS duration FROM prenota2017 INNER JOIN clienti ON clienti.idclienti = prenota2017.idclienti ;</sql>
+        <result outputType="json">{&#xd; "stays": {&#xd; "stay": [&#xd; {&#xd; "roomNumber": "$idappartamenti",&#xd; "guest": "$name",&#xd; "duration": "$duration"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+    </query>
+    <query id="getOrderStats" useConfig="hoteldruid">
+        <sql>SELECT COUNT(*) as count, costiprenota2017.nome, ntariffe2017.categoria_ca FROM costiprenota2017 INNER JOIN ntariffe2017 ON costiprenota2017.nome = ntariffe2017.nomecostoagg WHERE nome IS NOT NULL GROUP BY nome ORDER BY COUNT(*) DESC;</sql>
+        <result outputType="json">{&#xd; "orders": {&#xd; "order": [&#xd; {&#xd; "count": "$count",&#xd; "name": "$nome",&#xd; "category": "$categoria_ca"&#xd; }&#xd; ]&#xd; }&#xd;}</result>
+    </query>
+    <query id="getGuestsWithSpecialRequests" useConfig="suiteCRM">
+        <sql>select id, first_name, last_name, specialrequest_c&#xd;from contacts&#xd;inner join contacts_cstm&#xd;on contacts.id = contacts_cstm.id_c&#xd;where contacts_cstm.specialrequest_c != 'None' AND contacts_cstm.specialrequest_c IS NOT null;</sql>
+        <result element="Entries" rowName="Entry">
+            <element column="first_name" name="first_name" xsdType="string"/>
+            <element column="last_name" name="last_name" xsdType="string"/>
+            <element column="specialrequest_c" name="specialrequest" xsdType="string"/>
+            <element column="id" name="id" xsdType="string"/>
+        </result>
+    </query>
+    <operation name="getProductCategory">
+        <call-query href="getProductCategory">
+            <with-param name="category" query-param="category"/>
+        </call-query>
+    </operation>
+    <operation name="processOrder">
+        <call-query href="processOrder">
+            <with-param name="orderId" query-param="orderId"/>
+        </call-query>
+    </operation>
+    <operation name="getOrders">
+        <call-query href="getOrders">
+            <with-param name="category" query-param="category"/>
+        </call-query>
+    </operation>
+    <operation name="getCategories">
+        <call-query href="getCategories"/>
+    </operation>
+    <operation name="getAllOrders">
+        <call-query href="getAllOrders"/>
+    </operation>
+    <operation name="insertContact">
+        <call-query href="insertContact">
+            <with-param name="id" query-param="id"/>
+            <with-param name="firstName" query-param="firstName"/>
+            <with-param name="lastName" query-param="lastName"/>
+            <with-param name="birthDate" query-param="birthDate"/>
+            <with-param name="country" query-param="country"/>
+            <with-param name="state" query-param="state"/>
+            <with-param name="city" query-param="city"/>
+            <with-param name="postalCode" query-param="postalCode"/>
+            <with-param name="street" query-param="street"/>
+            <with-param name="phoneMobile" query-param="phoneMobile"/>
+            <with-param name="phoneWork" query-param="phoneWork"/>
+            <with-param name="phoneHome" query-param="phoneHome"/>
+            <with-param name="phoneFax" query-param="phoneFax"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </operation>
+    <operation name="insertEmail">
+        <call-query href="insertEmail">
+            <with-param name="id" query-param="id"/>
+            <with-param name="email" query-param="email"/>
+            <with-param name="emailCaps" query-param="emailCaps"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </operation>
+    <operation name="insertEmailRelation">
+        <call-query href="insertEmailRelation">
+            <with-param name="id" query-param="id"/>
+            <with-param name="emailId" query-param="emailId"/>
+            <with-param name="clientId" query-param="clientId"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </operation>
+    <operation name="getRoomClientStats">
+        <call-query href="getRoomClientStats"/>
+    </operation>
+    <operation name="getOrderStats">
+        <call-query href="getOrderStats"/>
+    </operation>
+    <operation name="getGuestsWithSpecialRequests">
+        <call-query href="getGuestsWithSpecialRequests"/>
+    </operation>
+    <resource method="GET" path="/products/categories">
+        <call-query href="getCategories"/>
+    </resource>
+    <resource method="GET" path="/products">
+        <call-query href="getProductCategory">
+            <with-param name="category" query-param="category"/>
+        </call-query>
+    </resource>
+    <resource method="GET" path="/orders">
+        <call-query href="getOrders">
+            <with-param name="category" query-param="category"/>
+        </call-query>
+    </resource>
+    <resource method="POST" path="/orders/process">
+        <call-query href="processOrder">
+            <with-param name="orderId" query-param="orderId"/>
+        </call-query>
+    </resource>
+    <resource method="POST" path="/crm/contacts">
+        <call-query href="insertContact">
+            <with-param name="id" query-param="id"/>
+            <with-param name="firstName" query-param="firstName"/>
+            <with-param name="lastName" query-param="lastName"/>
+            <with-param name="birthDate" query-param="birthDate"/>
+            <with-param name="country" query-param="country"/>
+            <with-param name="state" query-param="state"/>
+            <with-param name="city" query-param="city"/>
+            <with-param name="postalCode" query-param="postalCode"/>
+            <with-param name="street" query-param="street"/>
+            <with-param name="phoneMobile" query-param="phoneMobile"/>
+            <with-param name="phoneWork" query-param="phoneWork"/>
+            <with-param name="phoneHome" query-param="phoneHome"/>
+            <with-param name="phoneFax" query-param="phoneFax"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </resource>
+    <resource method="POST" path="/crm/emails">
+        <call-query href="insertEmail">
+            <with-param name="id" query-param="id"/>
+            <with-param name="email" query-param="email"/>
+            <with-param name="emailCaps" query-param="emailCaps"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </resource>
+    <resource method="POST" path="/crm/contacts/email/assign">
+        <call-query href="insertEmailRelation">
+            <with-param name="id" query-param="id"/>
+            <with-param name="emailId" query-param="emailId"/>
+            <with-param name="clientId" query-param="clientId"/>
+            <with-param name="createdOn" query-param="createdOn"/>
+        </call-query>
+    </resource>
+    <resource method="GET" path="/stats/rooms">
+        <call-query href="getRoomClientStats"/>
+    </resource>
+    <resource method="GET" path="/stats/orders">
+        <call-query href="getOrderStats"/>
+    </resource>
+    <resource method="GET" path="/crm/contacts/specialRequests">
+        <call-query href="getGuestsWithSpecialRequests"/>
+    </resource>
+</data>
